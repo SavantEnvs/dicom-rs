@@ -1,26 +1,23 @@
-# Build Stage
-FROM ghcr.io/evanrichter/cargo-fuzz:latest as builder
+FROM rustlang/rust:nightly as builder
 
-## Add source code to the build stage.
+RUN cargo install cargo-fuzz
+
 ADD . /src
 WORKDIR /src
 
 RUN echo building instrumented harnesses && \
-    bash -c "pushd ul/fuzz && cargo +nightly -Z sparse-registry fuzz build && popd" && \
-    bash -c "pushd object/fuzz && cargo +nightly -Z sparse-registry fuzz build && popd" && \
+    bash -c "pushd ul/fuzz && cargo fuzz build && popd" && \
+    bash -c "pushd object/fuzz && cargo fuzz build && popd" && \
     mv ul/fuzz/target/x86_64-unknown-linux-gnu/release/pdu_roundtrip /pdu_roundtrip && \
     mv object/fuzz/target/x86_64-unknown-linux-gnu/release/open_file /open_file && \
     echo done
 
-RUN echo building non-instrumented harnesses && \
-    export RUSTFLAGS="--cfg fuzzing -Clink-dead-code -Cdebug-assertions -C codegen-units=1" && \
-    bash -c "pushd ul/fuzz && cargo +nightly -Z sparse-registry build --release && popd" && \
-    bash -c "pushd object/fuzz && cargo +nightly -Z sparse-registry build --release && popd" && \
+RUN export RUSTFLAGS="--cfg fuzzing -Clink-dead-code -Cdebug-assertions -C codegen-units=1" && \
+    bash -c "pushd ul/fuzz && cargo build --release && popd" && \
+    bash -c "pushd object/fuzz && cargo build --release && popd" && \
     mv ul/fuzz/target/release/pdu_roundtrip /pdu_roundtrip_no_inst && \
-    mv object/fuzz/target/release/open_file /open_file_no_inst && \
-    echo done
+    mv object/fuzz/target/release/open_file /open_file_no_inst
 
-# Package Stage
 FROM rustlang/rust:nightly
 
 COPY --from=builder /pdu_roundtrip /pdu_roundtrip_no_inst /
