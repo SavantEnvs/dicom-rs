@@ -1,0 +1,16 @@
+# Mayhem target: dicom-rs's pdu_roundtrip fuzzer (libFuzzer, built by mayhem/build.sh via cargo-fuzz
+# from the upstream ul/fuzz crate at /mayhem/pdu_roundtrip). Fuzzes the DICOM upper-layer PDU codec:
+# the input is `arbitrary`-decoded into (maxlen: u32, strict: bool, bytes), then
+# dicom_ul::pdu::read_pdu -> write_pdu -> read_pdu, asserting PDU equality. Target name preserved
+# from the old fork.
+project: savantenvs/dicom-rs
+target: pdu_roundtrip
+# Canonical two-entry seed directive (docs/seed-corpus.md): the server tar is REQUIRED or the
+# corpus never accumulates (#124), and the local path must be RELATIVE — an absolute file:///
+# aborts run-creation on the CI runner (#158). Seeds relocated to the per-target path.
+testsuite:
+  - https://$MAYHEM_DOMAIN/$MAYHEM_PROJECT/$MAYHEM_TARGET/testsuite.tar
+  - file://mayhem/pdu_roundtrip/testsuite
+cmds:
+  - cmd: /mayhem/pdu_roundtrip
+    libfuzzer: true
