@@ -1,0 +1,15 @@
+# Mayhem target: dicom-rs's open_file fuzzer (libFuzzer, built by mayhem/build.sh via cargo-fuzz
+# from the upstream object/fuzz crate at /mayhem/open_file). Fuzzes the DICOM object parser:
+# dicom_object::OpenFileOptions::from_reader -> mutate -> write_all -> from_reader, asserting the
+# re-parsed object equals the original. Target name preserved from the old fork.
+project: savantenvs/dicom-rs
+target: open-file-buggy-mhh-run-101
+# origin: https://app.mayhem.security/mayhemheroes/dicom-rs/open-file/101
+# Canonical two-entry seed directive (docs/seed-corpus.md): the server tar is REQUIRED or the
+# corpus never accumulates (#124). No local seeds on a backport branch (BACKPORT.md R9): the
+# workflow downloads the origin run's crashers onto the runner and replays them via --testsuite.
+testsuite:
+  - https://$MAYHEM_DOMAIN/$MAYHEM_PROJECT/$MAYHEM_TARGET/testsuite.tar
+cmds:
+  - cmd: /mayhem/open_file
+    libfuzzer: true
